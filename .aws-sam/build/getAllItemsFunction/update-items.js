@@ -1,6 +1,4 @@
-const dynamodb = require("aws-sdk/clients/dynamodb");
-const docClient = new dynamodb.DocumentClient();
-const tableName = process.env.SAMPLE_TABLE;
+const { updateItems } = require("/opt/nodejs/datastore/updateItems");
 
 exports.updateItems = async (event) => {
   if (event.httpMethod !== "PUT") {
@@ -10,25 +8,13 @@ exports.updateItems = async (event) => {
   }
 
   const body = JSON.parse(event.body);
-  const id = body.id;
-  const name = body.name;
-  const category = body.category;
 
-  var params = {
-    TableName: tableName,
-    Key: { id: id },
-    UpdateExpression: "set #ns= :n,#cy= :c",
-    ExpressionAttributeValues: {
-      ":n": name,
-      ":c": category,
-    },
-    ExpressionAttributeNames: {
-      "#ns": "name",
-      "#cy": "category",
-    },
+  const item = {
+    id: body.id,
+    name: body.name,
+    category: body.category,
   };
-
-  const result = await docClient.update(params).promise();
+  const result = await updateItems(item);
 
   const response = {
     statusCode: 200,

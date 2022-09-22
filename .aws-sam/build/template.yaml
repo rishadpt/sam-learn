@@ -6,6 +6,8 @@ Globals:
   Function:
     Runtime: nodejs12.x
     CodeUri: ./src/handlers
+    Layers:
+    - Ref: MainLayer
     Architectures:
     - x86_64
     MemorySize: 128

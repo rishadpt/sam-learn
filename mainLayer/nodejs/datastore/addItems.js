@@ -1,16 +1,15 @@
-const AWS = require("aws-sdk");
-const dynamodb = new AWS.DynamoDB();
+const dynamodb = require("aws-sdk/clients/dynamodb");
+const docClient = new dynamodb.DocumentClient();
 
 const tableName = process.env.SAMPLE_TABLE;
 
 const addItems = async (item) => {
-
   var params = {
     TableName: tableName,
     Item: item,
   };
 
-  return dynamodb.putItem(params).promise();
+  return docClient.put(params).promise();
 };
 
 module.exports = {
