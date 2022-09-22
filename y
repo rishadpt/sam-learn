@@ -1,0 +1,12 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "learn-sam"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-109x488au1eds"
+s3_prefix = "learn-sam"
+region = "ap-south-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+disable_rollback = true
+image_repositories = []

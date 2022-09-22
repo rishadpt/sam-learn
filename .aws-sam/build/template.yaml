@@ -1,0 +1,175 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: learn-sam
+Transform:
+- AWS::Serverless-2016-10-31
+Globals:
+  Function:
+    Runtime: nodejs12.x
+    CodeUri: ./src/handlers
+    Architectures:
+    - x86_64
+    MemorySize: 128
+    Timeout: 30
+    Environment:
+      Variables:
+        SAMPLE_TABLE:
+          Ref: SampleTable
+Resources:
+  AuthApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowMethods: '''*'''
+        AllowOrigin: '''*'''
+        AllowHeaders: '''Authorization, Content-Type'''
+      Auth:
+        DefaultAuthorizer: AuthAuthorizer
+        Authorizers:
+          AuthAuthorizer:
+            UserPoolArn:
+              Fn::GetAtt:
+              - MyCognitoUserPool
+              - Arn
+        AddDefaultAuthorizerToCorsPreflight: false
+  getAllItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: get-all-items.getAllItemsHandler
+      Description: A simple example includes a HTTP get method to get all items from
+        a DynamoDB table.
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: SampleTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /
+            Method: GET
+      CodeUri: getAllItemsFunction
+    Metadata:
+      SamResourceId: getAllItemsFunction
+  getByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: get-by-id.getByIdHandler
+      Description: A simple example includes a HTTP get method to get one item by
+        id from a DynamoDB table.
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: SampleTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /{id}
+            RestApiId:
+              Ref: AuthApi
+            Method: GET
+      CodeUri: getByIdFunction
+    Metadata:
+      SamResourceId: getByIdFunction
+  putItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: put-item.putItemHandler
+      Description: A simple example includes a HTTP post method to add one item to
+        a DynamoDB table.
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: SampleTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /
+            Method: POST
+      CodeUri: putItemFunction
+    Metadata:
+      SamResourceId: putItemFunction
+  updateItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: update-items.updateItems
+      Description: A simple example includes a HTTP PUT method to Update item to a
+        DynamoDB table.
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: SampleTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /
+            Method: PUT
+      CodeUri: updateItemsFunction
+    Metadata:
+      SamResourceId: updateItemsFunction
+  deleteItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: delete-item.deleteItemFunction
+      Description: A simple example includes a HTTP PUT method to Update item to a
+        DynamoDB table.
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: SampleTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /{id}
+            Method: DELETE
+      CodeUri: deleteItemsFunction
+    Metadata:
+      SamResourceId: deleteItemsFunction
+  MyCognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: sam-learn
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+      UsernameAttributes:
+      - email
+      Schema:
+      - AttributeDataType: String
+        Name: email
+        Required: false
+  MyCognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId:
+        Ref: MyCognitoUserPool
+      ClientName: aws-learn
+      GenerateSecret: false
+  SampleTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: id
+        Type: String
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
+  MainLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: sam-learn-layer
+      Description: Dependencies for sam app [temp-units-conv]
+      ContentUri: ../../mainLayer
+      CompatibleRuntimes:
+      - nodejs16.x
+      LicenseInfo: MIT
+      RetentionPolicy: Retain
+Outputs:
+  WebEndpoint:
+    Description: API Gateway endpoint URL for Prod stage
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
