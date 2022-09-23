@@ -1,23 +1,24 @@
-const dynamodb = require('aws-sdk/clients/dynamodb');
+const dynamodb = require("aws-sdk/clients/dynamodb");
 const docClient = new dynamodb.DocumentClient();
 const tableName = process.env.SAMPLE_TABLE;
 
+exports.handler = async (event) => {
+  if (event.httpMethod !== "DELETE") {
+    throw new Error(
+      `Delete METHOD only accepts Delete method, you tried: ${event.httpMethod} method.`
+    );
+  }
 
-exports.deleteItemFunction = async (event)=>{
-    if (event.httpMethod !== 'DELETE'){
-        throw new Error(`Delete METHOD only accepts Delete method, you tried: ${event.httpMethod} method.`);
-    }
+  var params = {
+    TableName: tableName,
+    Key: { id: event.pathParameters.id },
+  };
 
-   var params = {
-        TableName : tableName,
-        Key:{id : event.pathParameters.id}
-    }
+  await docClient.delete(params).promise();
 
-    await docClient.delete(params).promise()
-
-    const response = {
-        statusCode: 200,
-        body: JSON.stringify({message:"user is Deleted successfully"})
-    };
-    return response
-}
+  const response = {
+    statusCode: 200,
+    body: JSON.stringify({ message: "user is Deleted successfully" }),
+  };
+  return response;
+};

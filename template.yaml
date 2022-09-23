@@ -17,17 +17,15 @@ Globals:
     Runtime: nodejs12.x
     CodeUri: ./src/handlers
     Layers:
-        - !Ref MainLayer
+      - !Ref MainLayer
     Architectures:
-        - x86_64
+      - x86_64
     MemorySize: 128
     Timeout: 30
     Environment:
       Variables:
         # Make table name accessible as environment variable from function code during execution
         SAMPLE_TABLE: !Ref SampleTable
-
-
 
 # Resources declares the AWS resources that you want to include in the stack
 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
@@ -54,31 +52,32 @@ Resources:
   getAllItemsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: get-all-items.getAllItemsHandler
+      Handler: get-all-items.handler
       Description: A simple example includes a HTTP get method to get all items from a DynamoDB table.
       Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref SampleTable
+        - Statement:
+            - Effect: "Allow"
+              Action:
+                - "dynamodb:Query"
+              Resource: !GetAtt SampleTable.Arn
       Events:
         Api:
           Type: Api
           Properties:
             Path: /
             Method: GET
-  # Each Lambda function is defined by properties:
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
 
-  # This is a Lambda function config associated with the source code: get-by-id.js
   getByIdFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: get-by-id.getByIdHandler
+      Handler: get-by-id.handler
       Description: A simple example includes a HTTP get method to get one item by id from a DynamoDB table.
       Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref SampleTable
+        - Statement:
+            - Effect: "Allow"
+              Action:
+                - "dynamodb:Query"
+              Resource: !GetAtt SampleTable.Arn
       Events:
         Api:
           Type: Api
@@ -86,7 +85,7 @@ Resources:
             Path: /{id}
             RestApiId: !Ref AuthApi
             Method: GET
-     
+
   # Each Lambda function is defined by properties:
   # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
 
@@ -94,12 +93,14 @@ Resources:
   putItemFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: put-item.putItemHandler
+      Handler: put-item.handler
       Description: A simple example includes a HTTP post method to add one item to a DynamoDB table.
       Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref SampleTable
+      - Statement:
+        - Effect: "Allow"
+          Action:
+          - "dynamodb:PutItem"
+          Resource: !GetAtt SampleTable.Arn
       Events:
         Api:
           Type: Api
@@ -110,12 +111,14 @@ Resources:
   updateItemsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: update-items.updateItems
+      Handler: update-items.handler
       Description: A simple example includes a HTTP PUT method to Update item to a DynamoDB table.
       Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref SampleTable
+      - Statement:
+        - Effect: "Allow"
+          Action:
+          - "dynamodb:UpdateItem"
+          Resource: !GetAtt SampleTable.Arn
       Events:
         Api:
           Type: Api
@@ -126,23 +129,25 @@ Resources:
   deleteItemsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: delete-item.deleteItemFunction
+      Handler: delete-item.handler
       Description: A simple example includes a HTTP PUT method to Update item to a DynamoDB table.
       Policies:
-        # Give Create/Read/Update/Delete Permissions to the SampleTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref SampleTable
+      - Statement:
+        - Effect: "Allow"
+          Action:
+          - "dynamodb:DeleteItem"
+          Resource: !GetAtt SampleTable.Arn
       Events:
         Api:
           Type: Api
           Properties:
             Path: /{id}
-            Method: DELETE           
-    
+            Method: DELETE
+
   MyCognitoUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: 'sam-learn'
+      UserPoolName: "sam-learn"
       Policies:
         PasswordPolicy:
           MinimumLength: 8
@@ -152,15 +157,14 @@ Resources:
         - AttributeDataType: String
           Name: email
           Required: false
-  
+
   MyCognitoUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
       UserPoolId: !Ref MyCognitoUserPool
-      ClientName:  'aws-learn'
+      ClientName: "aws-learn"
       GenerateSecret: false
 
-  # DynamoDB table to store item: {id: &lt;ID&gt;, name: &lt;NAME&gt;}
   SampleTable:
     Type: AWS::Serverless::SimpleTable
     Properties:
@@ -179,7 +183,7 @@ Resources:
       ContentUri: mainLayer/
       CompatibleRuntimes:
         - nodejs16.x
-      LicenseInfo: 'MIT'
+      LicenseInfo: "MIT"
       RetentionPolicy: Retain
 Outputs:
   WebEndpoint:

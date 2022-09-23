@@ -1,12 +1,13 @@
 const { getItems } = require("/opt/nodejs/datastore/getItems");
 
-exports.getAllItemsHandler = async (event) => {
+exports.handler = async (event) => {
   console.log("triger get all items handler");
   if (event.httpMethod !== "GET") {
     throw new Error(
       `getAllItems only accept GET method, you tried: ${event.httpMethod}`
     );
   }
+
 
   const data = await getItems();
   const items = data.Items;

@@ -8,18 +8,10 @@ const updateItems = async (item) => {
   var params = {
     TableName: tableName,
     Key: { id: item.id },
-    UpdateExpression: "set #ns= :n,#cy= :c",
-    ExpressionAttributeValues: {
-      ":n": item.name,
-      ":c": item.category,
-    },
-    ExpressionAttributeNames: {
-      "#ns": "name",
-      "#cy": "category",
-    },
   };
-
-  return docClient.update(params).promise();
+  const expression = item.updateExpression()
+  
+  return docClient.update(params,expression).promise();
 };
 
 module.exports = {

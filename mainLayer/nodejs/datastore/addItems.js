@@ -13,5 +13,5 @@ const addItems = async (item) => {
 };
 
 module.exports = {
-  addItems,
+  addItems
 };
