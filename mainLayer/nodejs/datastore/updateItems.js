@@ -4,14 +4,20 @@ const docClient = new dynamodb.DocumentClient();
 const tableName = process.env.SAMPLE_TABLE;
 
 const updateItems = async (item) => {
-  
+
   var params = {
     TableName: tableName,
-    Key: { id: item.id },
+    Key: item.key()
   };
-  const expression = item.updateExpression()
-  
-  return docClient.update(params,expression).promise();
+  console.log("Loging params",params.Key,item.updateExpression())
+  try{
+    const expression = item.updateExpression()
+    console.log(expression)
+    return await docClient.update(params,expression).promise();
+  }catch(e){
+    console.log(e);
+  }
+
 };
 
 module.exports = {

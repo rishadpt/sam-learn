@@ -1,4 +1,5 @@
 const { getbyId } = require("/opt/nodejs/datastore/getbyId");
+const { Users } = require("/opt/nodejs/entities/Users");
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "GET") {
@@ -7,8 +8,8 @@ exports.handler = async (event) => {
     );
   }
 
-  const id = event.pathParameters.id || false;
 
+  const id =  new Users(event.pathParameters);
   const data = await getbyId(id);
   const item = data.Item;
 

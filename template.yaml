@@ -12,6 +12,25 @@ Description: >-
 Transform:
   - AWS::Serverless-2016-10-31
 
+Parameters:
+# AWS Region for which Resources should be deployed.
+  RCU:
+    Description: Read capacity unit for DynamoDB Tables
+    Type: String
+    Default: '2'
+  WCU:
+    Description: Write capacity unit for DynamoDB Tables
+    Type: String
+    Default: '2'
+  GS1RCU:
+    Description: Global Secondary Index Read capacity unit for DynamoDB Tables
+    Type: String
+    Default: '1'
+  GS1WCU:
+    Description: Global Secondary Index Write capacity unit for DynamoDB Tables
+    Type: String
+    Default: '1'
+
 Globals:
   Function:
     Runtime: nodejs12.x
@@ -25,7 +44,7 @@ Globals:
     Environment:
       Variables:
         # Make table name accessible as environment variable from function code during execution
-        SAMPLE_TABLE: !Ref SampleTable
+        SAMPLE_TABLE: !Ref UserTable
 
 # Resources declares the AWS resources that you want to include in the stack
 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
@@ -58,8 +77,8 @@ Resources:
         - Statement:
             - Effect: "Allow"
               Action:
-                - "dynamodb:Query"
-              Resource: !GetAtt SampleTable.Arn
+                - "dynamodb:Scan"
+              Resource: !GetAtt UserTable.Arn
       Events:
         Api:
           Type: Api
@@ -77,7 +96,7 @@ Resources:
             - Effect: "Allow"
               Action:
                 - "dynamodb:Query"
-              Resource: !GetAtt SampleTable.Arn
+              Resource: !GetAtt UserTable.Arn
       Events:
         Api:
           Type: Api
@@ -100,7 +119,7 @@ Resources:
         - Effect: "Allow"
           Action:
           - "dynamodb:PutItem"
-          Resource: !GetAtt SampleTable.Arn
+          Resource: !GetAtt UserTable.Arn
       Events:
         Api:
           Type: Api
@@ -118,7 +137,7 @@ Resources:
         - Effect: "Allow"
           Action:
           - "dynamodb:UpdateItem"
-          Resource: !GetAtt SampleTable.Arn
+          Resource: !GetAtt UserTable.Arn
       Events:
         Api:
           Type: Api
@@ -136,7 +155,7 @@ Resources:
         - Effect: "Allow"
           Action:
           - "dynamodb:DeleteItem"
-          Resource: !GetAtt SampleTable.Arn
+          Resource: !GetAtt UserTable.Arn
       Events:
         Api:
           Type: Api
@@ -165,15 +184,48 @@ Resources:
       ClientName: "aws-learn"
       GenerateSecret: false
 
-  SampleTable:
-    Type: AWS::Serverless::SimpleTable
+  UserTable:
+    Type: AWS::DynamoDB::Table
     Properties:
-      PrimaryKey:
-        Name: id
-        Type: String
-      ProvisionedThroughput:
-        ReadCapacityUnits: 2
-        WriteCapacityUnits: 2
+      AttributeDefinitions:
+        -
+          AttributeName: "PK"
+          AttributeType: "S"
+        -
+          AttributeName: "SK"
+          AttributeType: "S"
+        - 
+          AttributeName: "GS1PK"
+          AttributeType: "S"
+        - 
+          AttributeName: "GS1SK"
+          AttributeType: "S"
+      KeySchema: 
+        - 
+          AttributeName: "PK"
+          KeyType: "HASH"
+        - 
+          AttributeName: "SK"
+          KeyType: "RANGE"
+      ProvisionedThroughput: 
+        ReadCapacityUnits: !Ref RCU
+        WriteCapacityUnits: !Ref WCU      
+      TableName: learnsam        
+      GlobalSecondaryIndexes: 
+        - 
+          IndexName: "GSI"
+          KeySchema: 
+            - 
+              AttributeName: "GS1PK"
+              KeyType: "HASH"
+            - 
+              AttributeName: "GS1SK"
+              KeyType: "RANGE"
+          Projection: 
+            ProjectionType: "ALL"
+          ProvisionedThroughput: 
+            ReadCapacityUnits: !Ref GS1RCU
+            WriteCapacityUnits: !Ref GS1WCU
 
   MainLayer:
     Type: AWS::Serverless::LayerVersion

@@ -2,6 +2,23 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: learn-sam
 Transform:
 - AWS::Serverless-2016-10-31
+Parameters:
+  RCU:
+    Description: Read capacity unit for DynamoDB Tables
+    Type: String
+    Default: '2'
+  WCU:
+    Description: Write capacity unit for DynamoDB Tables
+    Type: String
+    Default: '2'
+  GS1RCU:
+    Description: Global Secondary Index Read capacity unit for DynamoDB Tables
+    Type: String
+    Default: '1'
+  GS1WCU:
+    Description: Global Secondary Index Write capacity unit for DynamoDB Tables
+    Type: String
+    Default: '1'
 Globals:
   Function:
     Runtime: nodejs12.x
@@ -15,7 +32,7 @@ Globals:
     Environment:
       Variables:
         SAMPLE_TABLE:
-          Ref: SampleTable
+          Ref: UserTable
 Resources:
   AuthApi:
     Type: AWS::Serverless::Api
@@ -37,13 +54,18 @@ Resources:
   getAllItemsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: get-all-items.getAllItemsHandler
+      Handler: get-all-items.handler
       Description: A simple example includes a HTTP get method to get all items from
         a DynamoDB table.
       Policies:
-      - DynamoDBCrudPolicy:
-          TableName:
-            Ref: SampleTable
+      - Statement:
+        - Effect: Allow
+          Action:
+          - dynamodb:Scan
+          Resource:
+            Fn::GetAtt:
+            - UserTable
+            - Arn
       Events:
         Api:
           Type: Api
@@ -56,13 +78,18 @@ Resources:
   getByIdFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: get-by-id.getByIdHandler
+      Handler: get-by-id.handler
       Description: A simple example includes a HTTP get method to get one item by
         id from a DynamoDB table.
       Policies:
-      - DynamoDBCrudPolicy:
-          TableName:
-            Ref: SampleTable
+      - Statement:
+        - Effect: Allow
+          Action:
+          - dynamodb:Query
+          Resource:
+            Fn::GetAtt:
+            - UserTable
+            - Arn
       Events:
         Api:
           Type: Api
@@ -77,13 +104,18 @@ Resources:
   putItemFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: put-item.putItemHandler
+      Handler: put-item.handler
       Description: A simple example includes a HTTP post method to add one item to
         a DynamoDB table.
       Policies:
-      - DynamoDBCrudPolicy:
-          TableName:
-            Ref: SampleTable
+      - Statement:
+        - Effect: Allow
+          Action:
+          - dynamodb:PutItem
+          Resource:
+            Fn::GetAtt:
+            - UserTable
+            - Arn
       Events:
         Api:
           Type: Api
@@ -96,13 +128,18 @@ Resources:
   updateItemsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: update-items.updateItems
+      Handler: update-items.handler
       Description: A simple example includes a HTTP PUT method to Update item to a
         DynamoDB table.
       Policies:
-      - DynamoDBCrudPolicy:
-          TableName:
-            Ref: SampleTable
+      - Statement:
+        - Effect: Allow
+          Action:
+          - dynamodb:UpdateItem
+          Resource:
+            Fn::GetAtt:
+            - UserTable
+            - Arn
       Events:
         Api:
           Type: Api
@@ -115,13 +152,18 @@ Resources:
   deleteItemsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: delete-item.deleteItemFunction
+      Handler: delete-item.handler
       Description: A simple example includes a HTTP PUT method to Update item to a
         DynamoDB table.
       Policies:
-      - DynamoDBCrudPolicy:
-          TableName:
-            Ref: SampleTable
+      - Statement:
+        - Effect: Allow
+          Action:
+          - dynamodb:DeleteItem
+          Resource:
+            Fn::GetAtt:
+            - UserTable
+            - Arn
       Events:
         Api:
           Type: Api
@@ -151,15 +193,43 @@ Resources:
         Ref: MyCognitoUserPool
       ClientName: aws-learn
       GenerateSecret: false
-  SampleTable:
-    Type: AWS::Serverless::SimpleTable
+  UserTable:
+    Type: AWS::DynamoDB::Table
     Properties:
-      PrimaryKey:
-        Name: id
-        Type: String
+      AttributeDefinitions:
+      - AttributeName: PK
+        AttributeType: S
+      - AttributeName: SK
+        AttributeType: S
+      - AttributeName: GS1PK
+        AttributeType: S
+      - AttributeName: GS1SK
+        AttributeType: S
+      KeySchema:
+      - AttributeName: PK
+        KeyType: HASH
+      - AttributeName: SK
+        KeyType: RANGE
       ProvisionedThroughput:
-        ReadCapacityUnits: 2
-        WriteCapacityUnits: 2
+        ReadCapacityUnits:
+          Ref: RCU
+        WriteCapacityUnits:
+          Ref: WCU
+      TableName: learnsam
+      GlobalSecondaryIndexes:
+      - IndexName: GSI
+        KeySchema:
+        - AttributeName: GS1PK
+          KeyType: HASH
+        - AttributeName: GS1SK
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+        ProvisionedThroughput:
+          ReadCapacityUnits:
+            Ref: GS1RCU
+          WriteCapacityUnits:
+            Ref: GS1WCU
   MainLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:

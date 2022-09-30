@@ -1,6 +1,5 @@
-const dynamodb = require("aws-sdk/clients/dynamodb");
-const docClient = new dynamodb.DocumentClient();
-const tableName = process.env.SAMPLE_TABLE;
+const { Users } = require("/opt/nodejs/entities/Users");
+const { deleteItems } = require("/opt/nodejs/datastore/deleteItems");
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "DELETE") {
@@ -8,13 +7,9 @@ exports.handler = async (event) => {
       `Delete METHOD only accepts Delete method, you tried: ${event.httpMethod} method.`
     );
   }
+  const items = new Users(event.pathParameters);
 
-  var params = {
-    TableName: tableName,
-    Key: { id: event.pathParameters.id },
-  };
-
-  await docClient.delete(params).promise();
+  await deleteItems(items);
 
   const response = {
     statusCode: 200,
